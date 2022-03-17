@@ -7,6 +7,10 @@
 #include <sys/socket.h> // tcp magic
 #include <arpa/inet.h>  // tcp magic
 
+#include <dirent.h> //opendir\readdir\closedir..
+
+#include <stdlib.h> // for system
+
 int tcp_connection(int port) 
 {
     int sock = 0;
@@ -35,6 +39,86 @@ int tcp_connection(int port)
     return sock;
 }
 
+void echo(char** output, size_t outputsize, bool local, int sock)
+{
+    getline(output, &outputsize, stdin);
+    if (local) {  
+        printf("%s", *output);
+    } else {    
+        send(sock , *output , strlen(*output) , 0 );
+    }
+}
+
+void change_dir(char *cwd) 
+{
+    /**
+     * @brief This function uses a system call (chdir()) that uses the kernal inorder to navigate through the directory. 
+     * 
+     */
+    char dirname[256];
+    scanf("%s", dirname);
+    if (chdir(dirname) == -1) {
+        printf("couldnt open\n");
+    } else {
+        getcwd(cwd, sizeof(cwd));
+    }
+}
+
+void read_dir(char *cwd) {
+    DIR* dir = opendir(cwd); // might change cwd to "."
+    if (dir == NULL) {
+        printf ("Cannot open directory '%s'\n", cwd);
+        return;
+    }
+
+    struct dirent* entity;
+    entity = readdir(dir);
+    while (entity != NULL)
+    {
+    printf("%s\n",entity->d_name);
+    entity = readdir(dir);
+    }
+    closedir(dir);
+}
+
+int copy_file() {
+    /**
+     * @brief This function is used to copy a file from the current folder to the destination folder.
+     * Keep in mind that the file HAS to be in the current folder. And the destination folder has to be in the current folder as well. (following the assigemnt's instructions)
+     * I used (chdir) which is a system call, so my implementation uses a system call. Notice that fopen\read\write are library functions. 
+     */
+    char filenameSRC[256];
+    char destinationfolderDST[256];
+    scanf("%s", filenameSRC);
+    scanf("%s", destinationfolderDST);
+    if (access(filenameSRC, 0)==0&&access(destinationfolderDST, 0)==0) {
+        FILE* file2copy = fopen(filenameSRC, "rb");
+        chdir(destinationfolderDST);
+        FILE* file2create = fopen(filenameSRC, "wb");
+        if (file2copy==NULL||file2create==NULL) {
+            return -1;
+        }
+        while (1) {
+            int c = fgetc(file2copy);
+            if (feof(file2copy)) {
+                break;
+            }
+            fwrite(&c, sizeof(c), 1, file2create);
+        }
+        fclose(file2copy);
+        fclose(file2create);
+        chdir("..");
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+int delete_file(char* cwd) {
+    char filename[256];
+    scanf("%s", filename);
+    return unlink(filename);
+}
 int main ()
 {
     //size for input
@@ -56,17 +140,11 @@ int main ()
         getcwd(cwd, sizeof(cwd));
         printf("%s yes master\n", cwd);
         scanf("%s", input);
-        //getline(input, &t, stdin);
-        //printf("\t%s\n", input);
+
         if (!strcmp(input, "EXIT")) {
             running = false;
         } else if (!strcmp(input, "ECHO")) {
-            getline(output, &outputsize, stdin);
-            if (local) {  
-                printf("%s", *output);
-            } else {    
-                send(sock , *output , strlen(*output) , 0 );
-            }
+            echo(output, outputsize, local, sock);
         } else if (!strcmp(input, "TCP")) {
             int port = 0;
             scanf("%d", &port);
@@ -76,9 +154,32 @@ int main ()
             } else {
                 local = false;
             }
-        } else if (!strcmp(input, "LOCAL")) {
+        } else if (!strcmp(input, "LOCAL")) {     
             local = true;
             close(sock);
+        } else if (!strcmp(input, "DIR")) {     
+            read_dir(cwd);
+        } else if (!strcmp(input, "CD")) {
+            change_dir(cwd);
+        } else if (!strcmp(input, "COPY")) {
+            if (copy_file()==1) {
+                printf("file copied\n");
+            } else {
+                printf("ERROR in copying the file, make sure input is correct. use:\nCOPY (NAME OF THE FILE) (DESTINATION FOLDER)\n");
+            }
+        } else if (!strcmp(input, "DELETE")) {
+            if (delete_file(cwd)==0) {
+                printf("file deleted\n");
+            } else {
+                printf("ERROR in deleteing the file, make sure input is correct.\n");
+            }   
+        } else {
+            printf("unkown command, uses system..\n");
+            system(input); // KNOWN BUG DOES NOT TRANSFER THE ARGUMENT BECAUSE ITS IN THE NEXT SCANF
+            /**
+             * System is a library function, laies in the standard library, that takes an argument and uses it 
+             * in order to call commands usually used in the terminal.
+             */
         }
         
 
