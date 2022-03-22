@@ -115,6 +115,10 @@ int copy_file() {
 }
 
 int delete_file(char* cwd) {
+    /**
+     * @brief 
+     * My implementation uses unlink() which in a unix-based OS is a system-call.
+     */
     char filename[256];
     scanf("%s", filename);
     return unlink(filename);
@@ -135,6 +139,7 @@ int main ()
 
     int sock;
 
+    
     while (running)
     {
         getcwd(cwd, sizeof(cwd));
@@ -175,13 +180,28 @@ int main ()
             }   
         } else {
             printf("unkown command, uses system..\n");
-            system(input); // KNOWN BUG DOES NOT TRANSFER THE ARGUMENT BECAUSE ITS IN THE NEXT SCANF
+            getline(output, &outputsize, stdin);
+            char* cmd = strcat(input, *output);
+            printf("%s ", cmd);
+            system(cmd);
             /**
              * System is a library function, laies in the standard library, that takes an argument and uses it 
              * in order to call commands usually used in the terminal.
              */
+            int pid = fork();
+            if (pid==0) {
+                char *cmd = "ECHO";
+                char *argv[3];
+                argv[0] = "ECHO";
+                argv[1] = "this is a test";
+                argv[2] = NULL;
+
+                // if (execvp(cmd, argv) == -1) {
+                //     printf("fork failed");
+                // }
+                break;
         }
-        
+        }
 
     }
     
