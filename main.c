@@ -180,9 +180,10 @@ int main ()
             }   
         } else {
             printf("unkown command, uses system..\n");
-            getline(output, &outputsize, stdin);
-            char* cmd = strcat(input, *output);
-            printf("%s ", cmd);
+            char ** output_malloc = (char **)malloc((sizeof(char)*outputsize));
+            getline(output_malloc, &outputsize, stdin);//segmentation fault
+            char* cmd = strcat(input,*output_malloc);
+            printf("%s", cmd);
             system(cmd);
             /**
              * System is a library function, laies in the standard library, that takes an argument and uses it 
@@ -190,15 +191,15 @@ int main ()
              */
             int pid = fork();
             if (pid==0) {
-                char *cmd = "ECHO";
+                char *cmd = "ls";
                 char *argv[3];
-                argv[0] = "ECHO";
-                argv[1] = "this is a test";
+                argv[0] = "ls";
+                argv[1] = "-l";
                 argv[2] = NULL;
-
-                // if (execvp(cmd, argv) == -1) {
-                //     printf("fork failed");
-                // }
+                if (execvp(cmd, argv) == -1) {
+                    printf("fork failed");
+                }
+                
                 break;
         }
         }
