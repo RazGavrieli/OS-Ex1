@@ -130,7 +130,7 @@ int main ()
     char input[t];
 
     size_t outputsize = 128;
-    char *output[outputsize]; 
+    char **output; 
 
     bool running = true;
     bool local = true; // changes to false when TCP connection has been established
@@ -149,6 +149,7 @@ int main ()
         if (!strcmp(input, "EXIT")) {
             running = false;
         } else if (!strcmp(input, "ECHO")) {
+            output = (char **)malloc((sizeof(char)*outputsize));
             echo(output, outputsize, local, sock);
         } else if (!strcmp(input, "TCP")) {
             int port = 0;
