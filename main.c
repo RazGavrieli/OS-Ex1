@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+
 #include <unistd.h> // getcwd
 
 #include <sys/socket.h> // tcp magic
@@ -98,13 +99,13 @@ int copy_file() {
         if (file2copy==NULL||file2create==NULL) {
             return -1;
         }
-        while (1) {
-            int c = fgetc(file2copy);
-            if (feof(file2copy)) {
-                break;
-            }
-            fwrite(&c, sizeof(c), 1, file2create);
+        char buffer[1];
+        size_t bytes = fread(buffer, 1, sizeof(buffer), file2copy);
+        while (0 < bytes) {
+            fwrite(buffer, 1, bytes, file2create);
+            bytes = fread(buffer, 1, sizeof(buffer), file2copy);
         }
+ 
         fclose(file2copy);
         fclose(file2create);
         chdir("..");
@@ -125,9 +126,8 @@ int delete_file(char* cwd) {
 }
 int main ()
 {
-    //size for input
-    size_t t = 256;
-    char input[t];
+
+    char input[256];
 
     size_t outputsize = 128;
     char **output; 
@@ -182,27 +182,33 @@ int main ()
         } else {
             printf("unkown command, uses system..\n");
             char ** output_malloc = (char **)malloc((sizeof(char)*outputsize));
-            getline(output_malloc, &outputsize, stdin);//segmentation fault
-            char* cmd = strcat(input,*output_malloc);
-            printf("%s", cmd);
-            system(cmd);
+            getline(output_malloc, &outputsize, stdin);
+            char *line = strcat(input, *output_malloc);
+            //system(line);
             /**
              * System is a library function, laies in the standard library, that takes an argument and uses it 
              * in order to call commands usually used in the terminal.
              */
+            char *args[64];
+            char **next = args;
+            char *temp = strtok(line, " \n");
+            while (temp != NULL)
+            {
+                *next++ = temp;
+                temp = strtok(NULL, " \n");
+            }
+            *next = NULL;
+
             int pid = fork();
-            if (pid==0) {
-                char *cmd = "ls";
-                char *argv[3];
-                argv[0] = "ls";
-                argv[1] = "-l";
-                argv[2] = NULL;
-                if (execvp(cmd, argv) == -1) {
-                    printf("fork failed");
+            if (pid==-1) {
+                exit(1);
+            } else if (pid==0) {
+                if (execvp(args[0], args)==-1){
+                    printf("exevp failed\n");
                 }
-                
                 break;
-        }
+            }
+            wait(NULL);
         }
 
     }
