@@ -5,7 +5,7 @@ CXXFLAGS=
 
 OBJECTS=main.c
 
-run: main
+all: main server
 	./$^
 
 server: server.c
