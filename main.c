@@ -5,6 +5,7 @@
 
 #include <unistd.h> // getcwd
 
+#include <sys/wait.h> // wait funciton
 #include <sys/socket.h> // tcp magic
 #include <arpa/inet.h>  // tcp magic
 
